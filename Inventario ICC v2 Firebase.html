@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario Bodega — ICC DIGC PUC</title>
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <!-- Firebase compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Utils -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+  <!-- Firebase init -->
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyDgP9q1nF4p5FRK52yGmQ9yPo_96P1JLpo",
+      authDomain: "iccinventario.firebaseapp.com",
+      projectId: "iccinventario",
+      storageBucket: "iccinventario.firebasestorage.app",
+      messagingSenderId: "606406531836",
+      appId: "1:606406531836:web:0b7386f09006dc737e5579",
+      measurementId: "G-WCLHYRP5N3"
+    });
+    window.db = firebase.firestore();
+  </script>
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#eef2f7;color:#1a2332;min-height:100vh;}
+    a{color:#003087;}
+
+    .app-header{background:linear-gradient(135deg,#002060 0%,#003087 100%);color:white;padding:14px 28px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+    .app-header h1{font-size:17px;font-weight:700;letter-spacing:.3px;}
+    .app-header .sub{font-size:12px;opacity:.75;margin-top:2px;}
+    .nav-tabs{background:#002060;display:flex;gap:0;padding:0 28px;border-bottom:2px solid #001540;}
+    .nav-tab{padding:11px 22px;color:rgba(255,255,255,.65);cursor:pointer;font-size:13.5px;font-weight:500;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;}
+    .nav-tab:hover{color:white;background:rgba(255,255,255,.07);}
+    .nav-tab.active{color:white;border-bottom-color:#5ba3f5;}
+    .content{max-width:1300px;margin:0 auto;padding:24px 28px;}
+
+    .card{background:white;border-radius:10px;box-shadow:0 1px 5px rgba(0,0,0,.09);padding:22px;margin-bottom:18px;}
+    .card-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+    .card-title{font-size:15px;font-weight:700;color:#002060;}
+
+    .btn{padding:8px 16px;border-radius:7px;border:none;cursor:pointer;font-size:13.5px;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+    .btn-primary{background:#003087;color:white;} .btn-primary:hover{background:#002060;}
+    .btn-success{background:#1a6e3c;color:white;} .btn-success:hover{background:#145530;}
+    .btn-danger{background:#b91c1c;color:white;} .btn-danger:hover{background:#991b1b;}
+    .btn-secondary{background:#e8f0fe;color:#003087;} .btn-secondary:hover{background:#d0e0fc;}
+    .btn-outline{background:transparent;border:1.5px solid #003087;color:#003087;} .btn-outline:hover{background:#e8f0fe;}
+    .btn-sm{padding:5px 10px;font-size:12px;}
+    .btn:disabled{opacity:.6;cursor:not-allowed;}
+
+    .fg{margin-bottom:15px;}
+    .fl{display:block;font-size:12.5px;font-weight:600;color:#475569;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+    .fc{width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:14px;transition:border-color .2s;background:white;color:#1a2332;}
+    .fc:focus{outline:none;border-color:#003087;box-shadow:0 0 0 3px rgba(0,48,135,.1);}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .span2{grid-column:span 2;}
+
+    .tw{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;font-size:13.5px;}
+    th{background:#002060;color:white;padding:10px 13px;text-align:left;font-weight:500;white-space:nowrap;font-size:12.5px;}
+    td{padding:10px 13px;border-bottom:1px solid #e8edf3;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:#f7f9fc;}
+
+    .badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.3px;}
+    .bm{background:#dbeafe;color:#1e40af;} .bp{background:#dcfce7;color:#15803d;} .be{background:#fef3c7;color:#92400e;}
+
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;}
+    .modal{background:white;border-radius:12px;max-width:780px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.25);}
+    .mhd{padding:18px 24px;border-bottom:1px solid #e8edf3;display:flex;justify-content:space-between;align-items:center;}
+    .mtitle{font-size:17px;font-weight:700;color:#002060;}
+    .mbody{padding:22px 24px;}
+    .mftr{padding:14px 24px;border-top:1px solid #e8edf3;display:flex;justify-content:flex-end;gap:10px;}
+    .xbtn{background:none;border:none;font-size:26px;cursor:pointer;color:#94a3b8;line-height:1;} .xbtn:hover{color:#475569;}
+
+    .alert{padding:11px 16px;border-radius:7px;margin-bottom:16px;font-size:13.5px;}
+    .as{background:#f0fdf4;border:1px solid #86efac;color:#166534;}
+    .ae{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;}
+    .ai{background:#eff6ff;border:1px solid #93c5fd;color:#1e40af;}
+    .aw{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+    .stat{background:white;border-radius:10px;padding:16px 20px;box-shadow:0 1px 5px rgba(0,0,0,.08);border-left:4px solid #003087;}
+    .sv{font-size:30px;font-weight:800;color:#002060;}
+    .sl{font-size:12px;color:#64748b;margin-top:3px;font-weight:500;}
+
+    .empty{text-align:center;padding:56px 20px;color:#94a3b8;}
+    .empty .ei{font-size:48px;margin-bottom:12px;}
+    .empty h3{font-size:16px;margin-bottom:6px;color:#64748b;}
+
+    .thumb{width:52px;height:42px;object-fit:cover;border-radius:5px;border:1px solid #e2e8f0;}
+    .exp-warn{color:#b91c1c;font-weight:600;}
+
+    /* Sync indicator */
+    .sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+    .sync-ok{background:#22c55e;} .sync-err{background:#ef4444;} .sync-loading{background:#f59e0b;animation:pulse 1s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+    /* Loading overlay */
+    .loading-screen{position:fixed;inset:0;background:linear-gradient(135deg,#002060,#003087);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:white;gap:16px;}
+    .spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Label */
+    .label-wrap{background:white;padding:10px;border-radius:8px;}
+    .pl{width:100%;max-width:780px;background:white;font-family:Arial,sans-serif;font-size:8.5px;border:1.5px solid #000;margin:0 auto;}
+    .pl table{width:100%;border-collapse:collapse;}
+    .pl td,.pl th{border:1px solid #000;padding:3px 5px;vertical-align:top;}
+
+    .item-card{padding:10px 12px;border-radius:7px;cursor:pointer;border:1.5px solid #e2e8f0;transition:all .15s;background:#f8fafc;}
+    .item-card:hover{background:#f0f4ff;border-color:#93c5fd;}
+    .item-card.sel{background:#e8f0fe;border-color:#003087;}
+    .item-code{font-weight:700;font-size:12.5px;color:#002060;font-family:monospace;}
+    .item-name{font-size:12px;color:#475569;margin-top:2px;}
+
+    .twk{position:fixed;bottom:20px;right:20px;background:white;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:16px 18px;min-width:210px;z-index:999;display:none;}
+    .twk.on{display:block;}
+    .twk h4{font-size:13px;font-weight:700;margin-bottom:12px;color:#002060;}
+    .twkr{margin-bottom:10px;}
+    .twkr label{font-size:12px;color:#475569;display:block;margin-bottom:4px;}
+    .twkr input,.twkr select{width:100%;padding:6px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:12px;}
+
+    @media print{
+      .no-print{display:none!important;}
+      body{background:white;}
+      .content{padding:0;}
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const {useState, useEffect, useRef, useCallback} = React;
+
+/* ═══════════════════ UTILS ═══════════════════ */
+const uuid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const today = () => new Date().toISOString().split('T')[0];
+const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-CL') : '—';
+const isExpired = d => d && new Date(d+'T23:59:59') < new Date();
+const getInitials = name => {
+  if (!name) return 'XX';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0]+parts[1][0]).toUpperCase();
+  return parts[0].slice(0,2).toUpperCase();
+};
+const typeCode = {material:'M', probeta:'P', equipo:'E'};
+const toB64 = d => { try{ return btoa(encodeURIComponent(JSON.stringify(d))); }catch{ return ''; } };
+const fromB64 = s => { try{ return JSON.parse(decodeURIComponent(atob(s))); }catch{ return null; } };
+const badgeClass = t => t==='material'?'bm':t==='probeta'?'bp':'be';
+
+/* Compress image to base64, max 700px, quality 0.55 */
+const compressImage = (file) => new Promise(resolve => {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 700;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.55));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+/* Firestore helpers */
+const COL_USERS  = 'users';
+const COL_ITEMS  = 'items';
+const DOC_CONFIG = 'app_config';
+const COL_CONFIG = 'config';
+
+const generateFolio = (supervisor, alumno, tipo, items) => {
+  const sup = getInitials(supervisor);
+  const alu = getInitials(alumno);
+  const tc = typeCode[tipo] || 'M';
+  const prefix = `${sup}-${alu}-${tc}`;
+  const n = items.filter(i => i.folio?.startsWith(prefix)).length;
+  return `${prefix}-${String(n+1).padStart(4,'0')}`;
+};
+
+/* ═══════════════════ QR ═══════════════════ */
+function QRImg({value, size=100}) {
+  const ref = useRef();
+  useEffect(() => {
+    if (!ref.current || !value) return;
+    ref.current.innerHTML = '';
+    // Retry up to 5 times waiting for library to load
+    let attempts = 0;
+    const tryRender = () => {
+      if (!window.QRCode) {
+        if (++attempts < 5) setTimeout(tryRender, 400);
+        return;
+      }
+      try {
+        ref.current.innerHTML = '';
+        new window.QRCode(ref.current, {
+          text: value, width: size, height: size,
+          colorDark: '#000000', colorLight: '#ffffff',
+          correctLevel: window.QRCode.CorrectLevel.M
+        });
+      } catch(e){ console.warn('QR error:', e); }
+    };
+    tryRender();
+  }, [value, size]);
+  return <div ref={ref} style={{lineHeight:0, minWidth:size, minHeight:size}}/>;
+}
+
+/* ═══════════════════ PUC LOGO ═══════════════════ */
+const PUCLogo = ({size=46}) => (
+  <svg width={size} height={size} viewBox="0 0 46 46" fill="none">
+    <circle cx="23" cy="23" r="22" fill="#003087"/>
+    <circle cx="23" cy="23" r="20" fill="none" stroke="white" strokeWidth=".7"/>
+    <text x="23" y="19" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="bold" fontFamily="Arial">PUC</text>
+    <text x="23" y="28" textAnchor="middle" fill="white" fontSize="5" fontFamily="Arial">CHILE</text>
+    <path d="M10 32 Q23 37 36 32" stroke="gold" strokeWidth=".8" fill="none"/>
+  </svg>
+);
+
+/* ═══════════════════ SAFETY ICONS ═══════════════════ */
+const SafetyRow = () => {
+  const icons = [
+    {txt:'EQUIPO DE\nPROTECCIÓN\nOBLIGATORIO',sub:'Ref. SC-15',multi:true},
+    {ico:'👁️',sub:'Ref. 277'},{ico:'🥾',sub:'Ref. SO-2130'},
+    {ico:'🧤',sub:'Ref. SO-2174'},{ico:'⛑️',sub:'Ref. 258'},
+    {ico:'😷',sub:'Ref. 284'},{ico:'🖐️',sub:'Ref. SO-2146'},
+  ];
+  return (
+    <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'flex-end'}}>
+      {icons.map((ic,i)=>(
+        <div key={i} style={{textAlign:'center',minWidth:42}}>
+          <div style={{background:'#003087',color:'white',borderRadius:3,padding:'4px 3px',
+            fontSize:ic.multi?6.5:18,fontWeight:'bold',lineHeight:1.3,minHeight:40,
+            display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid #001540'}}>
+            {ic.multi ? ic.txt.split('\n').map((t,j)=><div key={j}>{t}</div>) : ic.ico}
+          </div>
+          <div style={{fontSize:5.5,color:'#333',marginTop:1}}>{ic.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/* ═══════════════════ PROTOCOL LABEL ═══════════════════ */
+function ProtocolLabel({item, user, itemUrl}) {
+  const alumno  = item.alumnoEjecutante || user?.nombre || '';
+  const docente = item.supervisor       || user?.supervisor || '';
+  const tel     = item.contacto         || user?.telefono || '';
+  const mail    = item.correoContacto   || user?.correo || '';
+  return (
+    <div className="pl" id="protocol-label">
+      <table>
+        <tbody>
+          <tr>
+            <td rowSpan={2} style={{width:54,textAlign:'center',verticalAlign:'middle',padding:4}}><PUCLogo size={46}/></td>
+            <td style={{fontWeight:'bold',fontSize:9}}>Pontificia Universidad Católica de Chile</td>
+            <td style={{fontWeight:'bold',fontSize:8,whiteSpace:'nowrap'}}>FECHA</td>
+            <td style={{fontSize:8.5,minWidth:80}}>{fmtDate(item.fecha)}</td>
+          </tr>
+          <tr><td colSpan={3} style={{fontSize:8}}>Departamento de Ingeniería y Gestión de la construcción</td></tr>
+        </tbody>
+      </table>
+      <div style={{border:'1px solid #000',borderTop:'none',textAlign:'center',fontWeight:'bold',fontSize:10,padding:'5px 4px',textTransform:'uppercase',background:'#f0f4ff'}}>
+        PROTOCOLO DE ETIQUETADO DE MATERIALES Y/O PROBETAS DE ENSAYO
+      </div>
+      <table>
+        <tbody>
+          <tr>
+            <td style={{width:'42%',borderTop:'none',fontSize:8.5}}><strong>MATERIAL / PROBETA DE ENSAYO: </strong>{item.nombre}</td>
+            <td style={{borderTop:'none',borderLeft:'none',fontSize:8.5}}><strong>Indicar contenido: </strong>{item.tipo?.toUpperCase()}{item.cantidad&&<span style={{marginLeft:8,color:'#555'}}>Cant: {item.cantidad}</span>}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style={{border:'1px solid #000',borderTop:'none',padding:'2px 5px',fontSize:7,fontStyle:'italic',color:'#444'}}>
+        N° FOLIO: iniciales del nombre del profesor responsable + alumno revisor + M/P/E + número de folio.
+      </div>
+      <div style={{border:'1px solid #000',borderTop:'none',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 14px',gap:8}}>
+        <div style={{fontSize:38,fontWeight:'900',color:'#003087',letterSpacing:4,fontFamily:'Arial',flex:1,textAlign:'center'}}>{item.folio}</div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,minWidth:90}}>
+          <QRImg value={itemUrl} size={80}/>
+          <div style={{fontSize:7,fontWeight:'bold',textAlign:'center',maxWidth:86,color:'#002060'}}>{alumno}</div>
+          <div style={{fontSize:6.5,textAlign:'center',maxWidth:86,color:'#555'}}>{item.nombre}</div>
+        </div>
+      </div>
+      <table>
+        <tbody>
+          <tr>
+            <td style={{width:'50%',borderTop:'none'}}>
+              <div style={{fontWeight:'bold',fontSize:7.5,textTransform:'uppercase',color:'#002060'}}>ALUMNO EJECUTANTE</div>
+              <div style={{fontSize:9.5,marginTop:5,minHeight:18,fontWeight:'500'}}>{alumno}</div>
+            </td>
+            <td style={{width:'50%',borderTop:'none',borderLeft:'none'}}>
+              <div style={{fontWeight:'bold',fontSize:7.5,textTransform:'uppercase',color:'#002060'}}>DOCENTE RESPONSABLE</div>
+              <div style={{fontSize:9.5,marginTop:5,minHeight:18,fontWeight:'500'}}>{docente}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <table>
+        <tbody>
+          <tr>
+            <td style={{width:'50%',borderTop:'none',verticalAlign:'top'}}>
+              <div style={{fontWeight:'bold',fontSize:7.5,textTransform:'uppercase',color:'#002060'}}>CONTACTO</div>
+              <div style={{fontSize:8.5,marginTop:4}}>{tel}</div>
+              <div style={{fontSize:8,color:'#555'}}>{mail}</div>
+            </td>
+            <td style={{width:'50%',borderTop:'none',borderLeft:'none',padding:0}}>
+              <div style={{borderBottom:'1px solid #000',padding:'3px 5px'}}>
+                <div style={{fontWeight:'bold',fontSize:7.5,textTransform:'uppercase',color:'#002060'}}>VIGENCIA</div>
+                <div style={{fontSize:8.5,marginTop:2,color:isExpired(item.vigencia)?'#b91c1c':'inherit',fontWeight:isExpired(item.vigencia)?'bold':'normal'}}>
+                  {fmtDate(item.vigencia)}{isExpired(item.vigencia)&&' ⚠ VENCIDO'}
+                </div>
+              </div>
+              <div style={{padding:'3px 5px'}}>
+                <div style={{fontWeight:'bold',fontSize:7.5,textTransform:'uppercase',color:'#002060'}}>UBICACIÓN</div>
+                <div style={{fontSize:8.5,marginTop:2}}>{item.ubicacion}</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <table>
+        <tbody>
+          <tr>
+            <td style={{width:'50%',borderTop:'none',verticalAlign:'top'}}>
+              <div style={{fontWeight:'bold',fontSize:7.5,textTransform:'uppercase',color:'#002060',marginBottom:4}}>COMENTARIOS</div>
+              <div style={{fontSize:8.5,minHeight:34,lineHeight:1.5}}>{item.observaciones}</div>
+            </td>
+            <td style={{width:'50%',borderTop:'none',borderLeft:'none',verticalAlign:'top'}}>
+              <div style={{fontWeight:'bold',fontSize:7.5,textTransform:'uppercase',color:'#002060',marginBottom:4}}>SEGURIDAD</div>
+              <div style={{fontSize:7,lineHeight:1.5}}>TODA PERSONA QUE UTILICE LAS DEPENDENCIAS DE LOS LABORATORIOS DIGC UC DEBERÁN TENER CONOCIMIENTO Y TENER CLARO LOS PROCEDIMIENTOS DE SEGURIDAD Y PREVENCIÓN DE RIESGOS DEL: <strong>MANUAL INSTRUCTIVO DE SEGURIDAD LABORATORIO DEPARTAMENTO DE INGENIERIA Y GESTIÓN DE LA CONSTRUCCIÓN.</strong></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div style={{border:'1px solid #000',borderTop:'none',padding:'4px 5px'}}>
+        <div style={{fontSize:7.5,marginBottom:5,fontWeight:'bold'}}>Tachar cuales no correspondan:</div>
+        <SafetyRow/>
+      </div>
+      <div style={{border:'1px solid #000',borderTop:'none',padding:'3px 5px',fontWeight:'bold',fontSize:8,textAlign:'center',background:'#f5f5f5'}}>NOTA IMPORTANTE</div>
+      <div style={{border:'1px solid #000',borderTop:'none',padding:'4px 5px',fontSize:7,lineHeight:1.55,color:'#bb0000'}}>
+        LOS ALUMNOS, INVESTIGADORES Y DOCENTES TIENEN COMO OBLIGACIÓN DE INFORMAR DE SUS TRABAJOS AL ENCARGADO DE LOS LABORATORIOS. TIENEN LA OBLIGACIÓN DE ETIQUETAR CON ESTE FORMATO TODOS LOS MATERIALES Y PROBETAS DE ENSAYO. TODA PERSONA ES RESPONSABLE DE MANTENER RESGUARDADOS BIEN IDENTIFICADOS SUS MATERIALES Y/O PROBETAS DE ENSAYO.
+      </div>
+      <div style={{border:'1px solid #000',borderTop:'none',padding:'2px 5px',textAlign:'center',fontSize:7,fontStyle:'italic',color:'#555'}}>VERSIÓN EVV 20-04-2026</div>
+    </div>
+  );
+}
+
+/* ═══════════════════ ITEM DETAIL VIEW (QR scan) ═══════════════════ */
+function ItemDetailView({item}) {
+  return (
+    <div style={{maxWidth:600,margin:'36px auto',padding:'0 16px'}}>
+      <div style={{background:'linear-gradient(135deg,#002060,#003087)',color:'white',padding:'14px 20px',borderRadius:'10px 10px 0 0',textAlign:'center'}}>
+        <div style={{fontSize:11,opacity:.8}}>Pontificia Universidad Católica de Chile · DIGC</div>
+        <div style={{fontSize:18,fontWeight:800,marginTop:6,letterSpacing:1}}>PROTOCOLO DE ETIQUETADO</div>
+      </div>
+      <div style={{background:'white',borderRadius:'0 0 10px 10px',padding:24,boxShadow:'0 3px 12px rgba(0,0,0,.12)'}}>
+        <div style={{fontSize:30,fontWeight:900,color:'#003087',textAlign:'center',letterSpacing:3,marginBottom:20,fontFamily:'Arial',borderBottom:'2px solid #003087',paddingBottom:12}}>{item.folio}</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+          {[['Ítem / Material',item.nombre],['Tipo',item.tipo?.toUpperCase()],['Alumno Ejecutante',item.alumnoEjecutante],
+            ['Docente Responsable',item.supervisor],['Fecha Registro',fmtDate(item.fecha)],
+            ['Vigencia',fmtDate(item.vigencia)],['Contacto',item.contacto],['Ubicación',item.ubicacion],
+            ['Investigación',item.investigacion],['Cantidad',item.cantidad]
+          ].map(([lbl,val])=>val?(
+            <div key={lbl} style={{padding:'8px 0',borderBottom:'1px solid #e8edf3'}}>
+              <div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',letterSpacing:.5}}>{lbl}</div>
+              <div style={{fontSize:14,color:'#1e293b',marginTop:2}}>{val}</div>
+            </div>
+          ):null)}
+        </div>
+        {item.observaciones&&<div style={{marginTop:16,padding:'10px 14px',background:'#f0f4ff',borderRadius:7,borderLeft:'3px solid #003087'}}><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:4}}>Comentarios</div><div style={{fontSize:14}}>{item.observaciones}</div></div>}
+        {item.foto&&<div style={{marginTop:16}}><div style={{fontSize:10,color:'#94a3b8',fontWeight:700,textTransform:'uppercase',marginBottom:8}}>Fotografía</div><img src={item.foto} alt="" style={{maxWidth:'100%',borderRadius:7,border:'1px solid #e2e8f0'}}/></div>}
+        {isExpired(item.vigencia)&&<div style={{marginTop:16,padding:'10px 14px',background:'#fef2f2',borderRadius:7,borderLeft:'3px solid #b91c1c',color:'#b91c1c',fontWeight:600,fontSize:13}}>⚠️ Este ítem tiene su vigencia vencida ({fmtDate(item.vigencia)}).</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ USERS TAB ═══════════════════ */
+function UsersTab({users, syncing}) {
+  const [showForm,setShowForm] = useState(false);
+  const [editId,setEditId] = useState(null);
+  const [form,setForm] = useState({nombre:'',supervisor:'',investigacion:'',telefono:'',correo:''});
+  const [search,setSearch] = useState('');
+  const [alert,setAlert] = useState(null);
+  const [saving,setSaving] = useState(false);
+  const flash=(msg,type='as')=>{setAlert({msg,type});setTimeout(()=>setAlert(null),3500);};
+  const F=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const openNew=()=>{setForm({nombre:'',supervisor:'',investigacion:'',telefono:'',correo:''});setEditId(null);setShowForm(true);};
+  const openEdit=u=>{setForm({nombre:u.nombre,supervisor:u.supervisor,investigacion:u.investigacion,telefono:u.telefono,correo:u.correo});setEditId(u.id);setShowForm(true);};
+
+  const handleSave=async()=>{
+    if(!form.nombre.trim()) return flash('El nombre es requerido','ae');
+    if(!form.correo.trim()) return flash('El correo es requerido','ae');
+    setSaving(true);
+    try {
+      if(editId){ await db.collection(COL_USERS).doc(editId).update(form); flash('Usuario actualizado'); }
+      else { await db.collection(COL_USERS).add({...form, createdAt:new Date().toISOString()}); flash('Usuario creado'); }
+      setShowForm(false);
+    } catch(e){ flash('Error al guardar: '+e.message,'ae'); }
+    setSaving(false);
+  };
+
+  const handleDel=async id=>{
+    if(!confirm('¿Eliminar usuario?')) return;
+    try { await db.collection(COL_USERS).doc(id).delete(); flash('Usuario eliminado'); }
+    catch(e){ flash('Error: '+e.message,'ae'); }
+  };
+
+  const fil=users.filter(u=>u.nombre.toLowerCase().includes(search.toLowerCase())||(u.correo||'').toLowerCase().includes(search.toLowerCase())||(u.supervisor||'').toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div>
+      {alert&&<div className={`alert ${alert.type}`}>{alert.msg}</div>}
+      <div className="card">
+        <div className="card-hd">
+          <span className="card-title">👤 Gestión de Usuarios {syncing&&<span style={{fontSize:11,color:'#f59e0b',marginLeft:8}}>⏳ sincronizando…</span>}</span>
+          <button className="btn btn-primary" onClick={openNew}>+ Nuevo Usuario</button>
+        </div>
+        <input className="fc" placeholder="🔍  Buscar por nombre, correo o supervisor…" value={search} onChange={e=>setSearch(e.target.value)} style={{marginBottom:14}}/>
+        {fil.length===0?(
+          <div className="empty"><div className="ei">👥</div><h3>Sin usuarios</h3><p>Crea el primer usuario para comenzar.</p></div>
+        ):(
+          <div className="tw">
+            <table>
+              <thead><tr><th>Nombre</th><th>Supervisor / Docente</th><th>Investigación</th><th>Teléfono</th><th>Correo</th><th>Acciones</th></tr></thead>
+              <tbody>
+                {fil.map(u=>(
+                  <tr key={u.id}>
+                    <td><strong>{u.nombre}</strong></td><td>{u.supervisor}</td>
+                    <td style={{maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{u.investigacion}</td>
+                    <td>{u.telefono}</td><td>{u.correo}</td>
+                    <td><div style={{display:'flex',gap:6}}>
+                      <button className="btn btn-secondary btn-sm" onClick={()=>openEdit(u)}>✏️</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>handleDel(u.id)}>🗑️</button>
+                    </div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      {showForm&&(
+        <div className="overlay">
+          <div className="modal">
+            <div className="mhd"><span className="mtitle">{editId?'Editar':'Nuevo'} Usuario</span><button className="xbtn" onClick={()=>setShowForm(false)}>×</button></div>
+            <div className="mbody">
+              <div className="g2">
+                <div className="fg"><label className="fl">Nombre completo *</label><input className="fc" value={form.nombre} onChange={e=>F('nombre',e.target.value)} placeholder="Ej: Fernando Asencio"/></div>
+                <div className="fg"><label className="fl">Supervisor / Docente responsable</label><input className="fc" value={form.supervisor} onChange={e=>F('supervisor',e.target.value)} placeholder="Ej: Marcelo González"/></div>
+                <div className="fg span2"><label className="fl">Nombre Investigación / Actividad</label><input className="fc" value={form.investigacion} onChange={e=>F('investigacion',e.target.value)} placeholder="Ej: Eficacia de fibras de madera en transmitancia térmica"/></div>
+                <div className="fg"><label className="fl">Teléfono de contacto</label><input className="fc" value={form.telefono} onChange={e=>F('telefono',e.target.value)} placeholder="+56 9 1234 5678"/></div>
+                <div className="fg"><label className="fl">Correo de contacto *</label><input className="fc" type="email" value={form.correo} onChange={e=>F('correo',e.target.value)} placeholder="nombre@uc.cl"/></div>
+              </div>
+            </div>
+            <div className="mftr"><button className="btn btn-outline" onClick={()=>setShowForm(false)}>Cancelar</button><button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Guardando…':editId?'Actualizar':'Guardar'}</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════ INVENTORY TAB ═══════════════════ */
+function InventoryTab({users, items, goLabel, syncing}) {
+  const [showForm,setShowForm] = useState(false);
+  const [qrItem,setQrItem] = useState(null);
+  const [search,setSearch] = useState('');
+  const [filterType,setFilterType] = useState('all');
+  const [alert,setAlert] = useState(null);
+  const [saving,setSaving] = useState(false);
+  const ef={userId:'',nombre:'',tipo:'material',fecha:today(),ubicacion:'',foto:'',observaciones:'',vigencia:'',cumpleSeguridad:'SI',fueraVigencia:'NO',informadoNota:'SI',cantidad:''};
+  const [form,setForm] = useState(ef);
+  const flash=(msg,type='as')=>{setAlert({msg,type});setTimeout(()=>setAlert(null),4000);};
+  const F=(k,v)=>setForm(f=>({...f,[k]:v}));
+
+  const handlePhoto=async e=>{
+    const file=e.target.files[0]; if(!file) return;
+    flash('Comprimiendo imagen…','ai');
+    const b64=await compressImage(file);
+    F('foto',b64);
+    flash('Imagen lista');
+  };
+
+  const handleSave=async()=>{
+    if(!form.userId) return flash('Selecciona un responsable','ae');
+    if(!form.nombre.trim()) return flash('El nombre del ítem es requerido','ae');
+    if(!form.vigencia) return flash('La vigencia es requerida','ae');
+    setSaving(true);
+    try {
+      const user=users.find(u=>u.id===form.userId);
+      const folio=generateFolio(user?.supervisor, user?.nombre, form.tipo, items);
+      await db.collection(COL_ITEMS).add({
+        ...form, folio,
+        alumnoEjecutante:user?.nombre||'', supervisor:user?.supervisor||'',
+        contacto:user?.telefono||'', correoContacto:user?.correo||'',
+        investigacion:user?.investigacion||'',
+        createdAt:new Date().toISOString()
+      });
+      setShowForm(false); setForm(ef);
+      flash(`✅ Ítem registrado — Folio: ${folio}`);
+    } catch(e){ flash('Error al guardar: '+e.message,'ae'); }
+    setSaving(false);
+  };
+
+  const handleDel=async id=>{
+    if(!confirm('¿Eliminar ítem del inventario?')) return;
+    try { await db.collection(COL_ITEMS).doc(id).delete(); }
+    catch(e){ alert('Error: '+e.message); }
+  };
+
+  const exportExcel=()=>{
+    const hdr=['N° FOLIO','FECHA INICIAL','NOMBRE INVESTIGACIÓN/ACTIVIDAD','MATERIAL/PROBETA','TIPO','CANTIDAD',
+      'ALUMNO EJECUTANTE','DOCENTE RESPONSABLE','CONTACTO','CORREO CONTACTO','UBICACIÓN','VIGENCIA (FECHA)',
+      'CUMPLE SEGURIDAD (SI/NO)','FUERA DE VIGENCIA (SI/NO)','INFORMADO POR NOTA (SI/NO)','COMENTARIOS/OBSERVACIONES'];
+    const rows=items.map(i=>[i.folio,i.fecha,i.investigacion||'',i.nombre,(i.tipo||'').toUpperCase(),i.cantidad||'',
+      i.alumnoEjecutante||'',i.supervisor||'',i.contacto||'',i.correoContacto||'',
+      i.ubicacion||'',i.vigencia||'',i.cumpleSeguridad||'',i.fueraVigencia||'',i.informadoNota||'',i.observaciones||'']);
+    const wb=XLSX.utils.book_new();
+    const ws=XLSX.utils.aoa_to_sheet([hdr,...rows]);
+    ws['!cols']=hdr.map(()=>({wch:24}));
+    XLSX.utils.book_append_sheet(wb,ws,'Inventario ICC');
+    XLSX.writeFile(wb,`Inventario_ICC_${today()}.xlsx`);
+    flash('Excel exportado exitosamente');
+  };
+
+  const fil=items.filter(i=>{
+    const ms=search.toLowerCase();
+    const s=!ms||(i.nombre||'').toLowerCase().includes(ms)||(i.folio||'').toLowerCase().includes(ms)||(i.alumnoEjecutante||'').toLowerCase().includes(ms);
+    const t=filterType==='all'||i.tipo===filterType;
+    return s&&t;
+  });
+
+  return (
+    <div>
+      {alert&&<div className={`alert ${alert.type}`}>{alert.msg}</div>}
+      <div className="stats">
+        {[{l:'Total Ítems',v:items.length,c:'#003087'},{l:'Materiales',v:items.filter(i=>i.tipo==='material').length,c:'#1e40af'},
+          {l:'Probetas',v:items.filter(i=>i.tipo==='probeta').length,c:'#15803d'},{l:'Equipos',v:items.filter(i=>i.tipo==='equipo').length,c:'#92400e'}
+        ].map(s=>(
+          <div key={s.l} className="stat" style={{borderLeftColor:s.c}}>
+            <div className="sv" style={{color:s.c}}>{s.v}</div><div className="sl">{s.l}</div>
+          </div>
+        ))}
+      </div>
+      <div className="card">
+        <div className="card-hd">
+          <span className="card-title">📦 Inventario Bodega ICC {syncing&&<span style={{fontSize:11,color:'#f59e0b',marginLeft:8}}>⏳ sincronizando…</span>}</span>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-success" onClick={exportExcel}>⬇️ Exportar Excel</button>
+            <button className="btn btn-primary" onClick={()=>setShowForm(true)}>+ Agregar Ítem</button>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:10,marginBottom:14}}>
+          <input className="fc" placeholder="🔍  Buscar por nombre, folio o responsable…" value={search} onChange={e=>setSearch(e.target.value)} style={{flex:1}}/>
+          <select className="fc" style={{width:170}} value={filterType} onChange={e=>setFilterType(e.target.value)}>
+            <option value="all">Todos los tipos</option>
+            <option value="material">Material</option>
+            <option value="probeta">Probeta</option>
+            <option value="equipo">Equipo</option>
+          </select>
+        </div>
+        {fil.length===0?(
+          <div className="empty"><div className="ei">📦</div><h3>Sin ítems</h3><p>Agrega el primer ítem al inventario.</p></div>
+        ):(
+          <div className="tw">
+            <table>
+              <thead><tr><th>Folio</th><th>Ítem</th><th>Tipo</th><th>Fecha</th><th>Responsable</th><th>Supervisor</th><th>Vigencia</th><th>Ubicación</th><th>Foto</th><th>Acciones</th></tr></thead>
+              <tbody>
+                {fil.map(i=>(
+                  <tr key={i.id}>
+                    <td><strong style={{color:'#003087',fontFamily:'monospace',fontSize:12.5}}>{i.folio}</strong></td>
+                    <td>{i.nombre}</td>
+                    <td><span className={`badge ${badgeClass(i.tipo)}`}>{(i.tipo||'').toUpperCase()}</span></td>
+                    <td>{fmtDate(i.fecha)}</td><td>{i.alumnoEjecutante}</td><td>{i.supervisor}</td>
+                    <td className={isExpired(i.vigencia)?'exp-warn':''}>{fmtDate(i.vigencia)}{isExpired(i.vigencia)&&' ⚠️'}</td>
+                    <td style={{maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.ubicacion}</td>
+                    <td>{i.foto&&<img src={i.foto} alt="" className="thumb"/>}</td>
+                    <td><div style={{display:'flex',gap:6}}>
+                      <button className="btn btn-secondary btn-sm" title="Ver QR" onClick={()=>setQrItem(i)}>🔲</button>
+                      <button className="btn btn-secondary btn-sm" title="Ver etiqueta" onClick={()=>goLabel(i)}>🏷️</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>handleDel(i.id)}>🗑️</button>
+                    </div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── QR Modal ── */}
+      {qrItem&&(
+        <div className="overlay" onClick={()=>setQrItem(null)}>
+          <div className="modal" style={{maxWidth:320}} onClick={e=>e.stopPropagation()}>
+            <div className="mhd">
+              <span className="mtitle">Código QR — {qrItem.folio}</span>
+              <button className="xbtn" onClick={()=>setQrItem(null)}>×</button>
+            </div>
+            <div className="mbody" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,padding:'28px 24px'}}>
+              <div style={{border:'3px solid #003087',borderRadius:10,padding:14,background:'white',boxShadow:'0 2px 12px rgba(0,48,135,.12)'}}>
+                <QRImg value={`${window.location.href.split('?')[0].split('#')[0]}?id=${qrItem.id}`} size={180}/>
+              </div>
+              <div style={{textAlign:'center',marginTop:4}}>
+                <div style={{fontWeight:700,fontSize:15,color:'#002060'}}>{qrItem.alumnoEjecutante}</div>
+                <div style={{fontSize:13,color:'#475569',marginTop:3}}>{qrItem.nombre}</div>
+                <div style={{fontSize:12,color:'#94a3b8',marginTop:2,fontFamily:'monospace'}}>{qrItem.folio}</div>
+              </div>
+              <button className="btn btn-primary" style={{width:'100%',marginTop:4}} onClick={()=>{
+                const wrap=document.createElement('div');
+                wrap.style.cssText='position:fixed;left:-9999px;top:0;background:white;padding:20px;';
+                document.body.appendChild(wrap);
+                new window.QRCode(wrap,{text:`${window.location.href.split('?')[0].split('#')[0]}?id=${qrItem.id}`,width:300,height:300,correctLevel:window.QRCode.CorrectLevel.M});
+                setTimeout(()=>{
+                  const img=wrap.querySelector('img')||wrap.querySelector('canvas');
+                  if(!img) return;
+                  const a=document.createElement('a');
+                  a.download=`QR_${qrItem.folio}.png`;
+                  a.href=img.tagName==='CANVAS'?img.toDataURL():img.src;
+                  a.click(); document.body.removeChild(wrap);
+                },400);
+              }}>⬇️ Descargar QR como PNG</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showForm&&(
+        <div className="overlay">
+          <div className="modal" style={{maxWidth:820}}>
+            <div className="mhd"><span className="mtitle">➕ Agregar Ítem al Inventario</span><button className="xbtn" onClick={()=>setShowForm(false)}>×</button></div>
+            <div className="mbody">
+              <div className="fg">
+                <label className="fl">Responsable (Alumno Ejecutante) *</label>
+                <select className="fc" value={form.userId} onChange={e=>F('userId',e.target.value)}>
+                  <option value="">— Seleccionar usuario —</option>
+                  {users.map(u=><option key={u.id} value={u.id}>{u.nombre}{u.supervisor?` — Sup: ${u.supervisor}`:''}</option>)}
+                </select>
+                {users.length===0&&<div style={{fontSize:12,color:'#b91c1c',marginTop:4}}>⚠️ No hay usuarios. Ve a la pestaña Usuarios para crear uno primero.</div>}
+              </div>
+              <div className="g2">
+                <div className="fg"><label className="fl">Nombre del ítem *</label><input className="fc" value={form.nombre} onChange={e=>F('nombre',e.target.value)} placeholder="Ej: Fibras de caña"/></div>
+                <div className="fg"><label className="fl">Tipo de ítem *</label>
+                  <select className="fc" value={form.tipo} onChange={e=>F('tipo',e.target.value)}>
+                    <option value="material">Material</option><option value="probeta">Probeta</option><option value="equipo">Equipo</option>
+                  </select>
+                </div>
+                <div className="fg"><label className="fl">Fecha de registro</label><input className="fc" type="date" value={form.fecha} onChange={e=>F('fecha',e.target.value)}/></div>
+                <div className="fg"><label className="fl">Vigencia (fecha hasta) *</label><input className="fc" type="date" value={form.vigencia} onChange={e=>F('vigencia',e.target.value)}/></div>
+                <div className="fg"><label className="fl">Cantidad</label><input className="fc" value={form.cantidad} onChange={e=>F('cantidad',e.target.value)} placeholder="Ej: 5 tinetas, 9 baldes…"/></div>
+                <div className="fg"><label className="fl">Ubicación</label><input className="fc" value={form.ubicacion} onChange={e=>F('ubicacion',e.target.value)} placeholder="Ej: Laboratorio ICC Materiales (Sector Acopio)"/></div>
+                <div className="fg span2"><label className="fl">Observaciones / Comentarios</label><textarea className="fc" rows={3} value={form.observaciones} onChange={e=>F('observaciones',e.target.value)} placeholder="Información adicional sobre el ítem…"/></div>
+                <div className="fg">
+                  <label className="fl">Fotografía del ítem</label>
+                  <input type="file" accept="image/*" onChange={handlePhoto} className="fc"/>
+                  {form.foto&&<img src={form.foto} alt="preview" style={{marginTop:8,maxHeight:100,borderRadius:6,border:'1px solid #e2e8f0'}}/>}
+                  <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>La imagen se comprime automáticamente.</div>
+                </div>
+                <div className="fg">
+                  <label className="fl">¿Cumple requisitos de seguridad?</label>
+                  <select className="fc" value={form.cumpleSeguridad} onChange={e=>F('cumpleSeguridad',e.target.value)}><option value="SI">SÍ</option><option value="NO">NO</option></select>
+                </div>
+                <div className="fg">
+                  <label className="fl">¿Informado por Nota Importante del Protocolo?</label>
+                  <select className="fc" value={form.informadoNota} onChange={e=>F('informadoNota',e.target.value)}><option value="SI">SÍ</option><option value="NO">NO</option></select>
+                </div>
+                <div className="fg">
+                  <label className="fl">¿Fuera de vigencia / Autorizado para botadero?</label>
+                  <select className="fc" value={form.fueraVigencia} onChange={e=>F('fueraVigencia',e.target.value)}><option value="NO">NO</option><option value="SI">SÍ</option></select>
+                </div>
+              </div>
+            </div>
+            <div className="mftr"><button className="btn btn-outline" onClick={()=>setShowForm(false)}>Cancelar</button><button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Guardando en la nube…':'✅ Registrar Ítem'}</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════ LABELS TAB ═══════════════════ */
+function LabelsTab({items, users, config, activeLabel}) {
+  const [sel,setSel] = useState(activeLabel);
+  const [alert,setAlert] = useState(null);
+  const [sending,setSending] = useState(false);
+  const [search,setSearch] = useState('');
+  const labelRef = useRef();
+  useEffect(()=>{ if(activeLabel) setSel(activeLabel); },[activeLabel]);
+  const flash=(msg,type='as')=>{setAlert({msg,type});setTimeout(()=>setAlert(null),5000);};
+
+  const getUrl=item=>{
+    if(!item) return '';
+    const base=window.location.href.split('?')[0].split('#')[0];
+    // Use only item ID — short URL = scannable QR. Detail fetched from Firestore on scan.
+    return `${base}?id=${item.id}`;
+  };
+
+  const handleDownload=()=>{
+    if(!labelRef.current) return;
+    flash('Generando imagen…','ai');
+    html2canvas(labelRef.current,{scale:2,useCORS:true,backgroundColor:'#fff',logging:false}).then(canvas=>{
+      const a=document.createElement('a');
+      a.download=`Etiqueta_${sel.folio}.png`;
+      a.href=canvas.toDataURL('image/png'); a.click();
+      flash('Etiqueta descargada como PNG');
+    }).catch(()=>flash('Error al generar imagen','ae'));
+  };
+
+  const handleEmail=async()=>{
+    const {emailjsServiceId,emailjsTemplateId,emailjsPublicKey,recipientEmail}=config;
+    if(!emailjsServiceId||!emailjsTemplateId||!emailjsPublicKey) return flash('⚙️ Configura EmailJS en la pestaña Configuración','ae');
+    if(!recipientEmail) return flash('⚙️ Ingresa el correo destinatario en Configuración','ae');
+    setSending(true);
+    try {
+      html2canvas(labelRef.current,{scale:2,backgroundColor:'#fff',logging:false}).then(async canvas=>{
+        emailjs.init(emailjsPublicKey);
+        await emailjs.send(emailjsServiceId,emailjsTemplateId,{
+          to_email:recipientEmail,folio:sel.folio,nombre_item:sel.nombre,
+          responsable:sel.alumnoEjecutante,supervisor:sel.supervisor,fecha:fmtDate(sel.fecha),
+          vigencia:fmtDate(sel.vigencia),ubicacion:sel.ubicacion||'',comentarios:sel.observaciones||'',
+          item_url:getUrl(sel),label_image:canvas.toDataURL('image/png'),
+        });
+        flash(`✅ Etiqueta enviada a ${recipientEmail}`);
+        setSending(false);
+      });
+    } catch(e){ flash(`Error: ${e?.text||e?.message||'desconocido'},'ae'`); setSending(false); }
+  };
+
+  const user=users.find(u=>u.id===sel?.userId);
+  const filItems=items.filter(i=>!search||(i.nombre||'').toLowerCase().includes(search.toLowerCase())||(i.folio||'').toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div>
+      {alert&&<div className={`alert ${alert.type}`}>{alert.msg}</div>}
+      <div style={{display:'grid',gridTemplateColumns:'260px 1fr',gap:16,alignItems:'start'}}>
+        <div className="card" style={{position:'sticky',top:20}}>
+          <div className="card-title" style={{marginBottom:10}}>🏷️ Seleccionar Ítem</div>
+          <input className="fc" placeholder="🔍 Buscar…" value={search} onChange={e=>setSearch(e.target.value)} style={{marginBottom:10,fontSize:13}}/>
+          <div style={{display:'flex',flexDirection:'column',gap:6,maxHeight:520,overflowY:'auto'}}>
+            {filItems.length===0&&<div style={{color:'#94a3b8',fontSize:13,padding:'8px 0'}}>No hay ítems registrados.</div>}
+            {filItems.map(i=>(
+              <div key={i.id} className={`item-card ${sel?.id===i.id?'sel':''}`} onClick={()=>setSel(i)}>
+                <div className="item-code">{i.folio}</div>
+                <div className="item-name">{i.nombre}</div>
+                <span className={`badge ${badgeClass(i.tipo)}`} style={{marginTop:4}}>{(i.tipo||'').toUpperCase()}</span>
+                {isExpired(i.vigencia)&&<span style={{marginLeft:6,fontSize:10,color:'#b91c1c',fontWeight:700}}>⚠️ VENCIDO</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          {!sel?(
+            <div className="card"><div className="empty"><div className="ei">🏷️</div><h3>Selecciona un ítem</h3><p>Elige un ítem de la lista para ver su etiqueta.</p></div></div>
+          ):(
+            <>
+              <div className="card no-print" style={{marginBottom:12}}>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+                  <div style={{flex:1,minWidth:0}}><span style={{fontWeight:700,color:'#002060',fontFamily:'monospace'}}>{sel.folio}</span><span style={{color:'#64748b',marginLeft:8,fontSize:13}}>{sel.nombre}</span></div>
+                  <button className="btn btn-secondary" onClick={handleDownload}>⬇️ PNG</button>
+                  <button className="btn btn-primary" onClick={()=>window.print()}>🖨️ Imprimir</button>
+                  <button className="btn btn-success" onClick={handleEmail} disabled={sending}>{sending?'⏳ Enviando…':'📧 Enviar Correo'}</button>
+                </div>
+              </div>
+              <div ref={labelRef} className="label-wrap">
+                <ProtocolLabel item={sel} user={user||{nombre:sel.alumnoEjecutante,supervisor:sel.supervisor,telefono:sel.contacto,correo:sel.correoContacto}} itemUrl={getUrl(sel)}/>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ CONFIG TAB ═══════════════════ */
+function ConfigTab({config, setConfig}) {
+  const [form,setForm] = useState({...config});
+  const [saved,setSaved] = useState(false);
+  const [saving,setSaving] = useState(false);
+  const F=(k,v)=>setForm(f=>({...f,[k]:v}));
+
+  const handleSave=async()=>{
+    setSaving(true);
+    try {
+      await db.collection(COL_CONFIG).doc(DOC_CONFIG).set(form, {merge:true});
+      setConfig(form); setSaved(true); setTimeout(()=>setSaved(false),3000);
+    } catch(e){ alert('Error al guardar: '+e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div>
+      {saved&&<div className="alert as">✅ Configuración guardada y sincronizada</div>}
+      <div className="card">
+        <div className="card-title" style={{marginBottom:16}}>📧 Envío de Correo — EmailJS</div>
+        <div className="alert ai" style={{marginBottom:18}}>
+          Para enviar etiquetas por correo necesitas una cuenta gratuita en <a href="https://www.emailjs.com" target="_blank"><strong>emailjs.com</strong></a>.
+          Esta configuración se guarda en la nube y es compartida por todos los usuarios.
+        </div>
+        <div className="g2">
+          <div className="fg"><label className="fl">Service ID</label><input className="fc" value={form.emailjsServiceId||''} onChange={e=>F('emailjsServiceId',e.target.value)} placeholder="service_xxxxxxx"/></div>
+          <div className="fg"><label className="fl">Template ID</label><input className="fc" value={form.emailjsTemplateId||''} onChange={e=>F('emailjsTemplateId',e.target.value)} placeholder="template_xxxxxxx"/></div>
+          <div className="fg"><label className="fl">Public Key</label><input className="fc" value={form.emailjsPublicKey||''} onChange={e=>F('emailjsPublicKey',e.target.value)} placeholder="XXXXXXXXXXXXXXXXXXXX"/></div>
+          <div className="fg"><label className="fl">Correo destinatario *</label><input className="fc" type="email" value={form.recipientEmail||''} onChange={e=>F('recipientEmail',e.target.value)} placeholder="laboratorio@uc.cl"/></div>
+        </div>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Guardando…':'💾 Guardar Configuración'}</button>
+      </div>
+      <div className="card">
+        <div className="card-title" style={{marginBottom:14}}>📋 Variables disponibles en la plantilla EmailJS</div>
+        <div style={{background:'#f8fafc',padding:16,borderRadius:7,fontFamily:'monospace',fontSize:12.5,lineHeight:2,border:'1px solid #e2e8f0'}}>
+          {['{{to_email}}','{{folio}}','{{nombre_item}}','{{responsable}}','{{supervisor}}','{{fecha}}','{{vigencia}}','{{ubicacion}}','{{comentarios}}','{{item_url}}','{{label_image}}'].map(v=>(
+            <div key={v} style={{color:'#003087'}}>{v}</div>
+          ))}
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-title" style={{marginBottom:14}}>☁️ Base de Datos</div>
+        <div style={{fontSize:13.5,lineHeight:2,color:'#475569'}}>
+          <div>✅ Conectado a <strong>Firebase Firestore</strong> — proyecto <code>iccinventario</code></div>
+          <div>🔄 Los datos se sincronizan en tiempo real entre todos los usuarios.</div>
+          <div>📊 El Excel exportado sigue el formato de la Planilla Control Protocolo de Etiquetado ICC.</div>
+          <div>🏷️ El código QR de cada etiqueta enlaza a la ficha completa del ítem.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ ROOT APP ═══════════════════ */
+function App() {
+  const [tab,setTab] = useState('inventory');
+  const [users,setUsers] = useState([]);
+  const [items,setItems] = useState([]);
+  const [config,setConfig] = useState({});
+  const [activeLabel,setActiveLabel] = useState(null);
+  const [itemDetail,setItemDetail] = useState(null);
+  const [loading,setLoading] = useState(true);
+  const [syncStatus,setSyncStatus] = useState('loading'); // 'ok' | 'error' | 'loading'
+  const [tweakOn,setTweakOn] = useState(false);
+
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{"accentColor":"#003087","tableFont":"13.5"}/*EDITMODE-END*/;
+  const [tweaks,setTweaks] = useState(TWEAK_DEFAULTS);
+
+  useEffect(() => {
+    // QR scan routing — ?id=FIRESTORE_ID (new) or ?item=BASE64 (legacy)
+    const params = new URLSearchParams(window.location.search);
+    const itemId = params.get('id');
+    const itemB64 = params.get('item');
+    if (itemId) {
+      db.collection(COL_ITEMS).doc(itemId).get().then(snap => {
+        if (snap.exists) setItemDetail({id:snap.id,...snap.data()});
+        else setItemDetail({folio:'—', nombre:'Ítem no encontrado', tipo:'', fecha:'', vigencia:'', ubicacion:'', observaciones:'', alumnoEjecutante:'', supervisor:'', contacto:'', correoContacto:'', investigacion:''});
+        setLoading(false);
+      }).catch(()=>setLoading(false));
+      return;
+    }
+    if (itemB64) { const d=fromB64(itemB64); if(d) { setItemDetail(d); setLoading(false); return; } }
+
+    // Real-time Firestore listeners
+    let unsubs = [];
+    let loaded = {users:false, items:false, config:false};
+    const checkDone = () => { if(loaded.users&&loaded.items&&loaded.config){ setLoading(false); setSyncStatus('ok'); } };
+
+    const u1 = db.collection(COL_USERS).orderBy('createdAt','asc').onSnapshot(snap => {
+      setUsers(snap.docs.map(d=>({id:d.id,...d.data()})));
+      loaded.users=true; checkDone(); setSyncStatus('ok');
+    }, e=>{ console.error(e); setSyncStatus('error'); setLoading(false); });
+
+    const u2 = db.collection(COL_ITEMS).orderBy('createdAt','desc').onSnapshot(snap => {
+      setItems(snap.docs.map(d=>({id:d.id,...d.data()})));
+      loaded.items=true; checkDone(); setSyncStatus('ok');
+    }, e=>{ console.error(e); setSyncStatus('error'); setLoading(false); });
+
+    const u3 = db.collection(COL_CONFIG).doc(DOC_CONFIG).onSnapshot(snap => {
+      if(snap.exists) setConfig(snap.data()||{});
+      loaded.config=true; checkDone(); setSyncStatus('ok');
+    }, e=>{ loaded.config=true; checkDone(); });
+
+    unsubs = [u1,u2,u3];
+
+    // Tweaks
+    const handler = e => {
+      if(e.data?.type==='__activate_edit_mode') setTweakOn(true);
+      if(e.data?.type==='__deactivate_edit_mode') setTweakOn(false);
+    };
+    window.addEventListener('message',handler);
+    window.parent.postMessage({type:'__edit_mode_available'},'*');
+
+    return () => { unsubs.forEach(u=>u()); window.removeEventListener('message',handler); };
+  }, []);
+
+  const goLabel = item => { setActiveLabel(item); setTab('labels'); };
+
+  if (itemDetail) return (
+    <div style={{background:'#eef2f7',minHeight:'100vh'}}>
+      <div style={{background:'linear-gradient(135deg,#002060,#003087)',padding:'10px 24px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span style={{color:'white',fontWeight:700,fontSize:15}}>ICC — DIGC PUC · Inventario Bodega</span>
+        <button className="btn btn-secondary btn-sm" onClick={()=>{setItemDetail(null);window.history.replaceState({},'',window.location.pathname);}}>← Ir al Inventario</button>
+      </div>
+      <ItemDetailView item={itemDetail}/>
+    </div>
+  );
+
+  if (loading) return (
+    <div className="loading-screen">
+      <PUCLogo size={64}/>
+      <div className="spinner"/>
+      <div style={{fontWeight:600,fontSize:16}}>Conectando con la base de datos…</div>
+      <div style={{fontSize:13,opacity:.7}}>ICC — Inventario Bodega Laboratorio</div>
+    </div>
+  );
+
+  if (syncStatus==='error') return (
+    <div className="loading-screen">
+      <div style={{fontSize:48}}>⚠️</div>
+      <div style={{fontWeight:700,fontSize:18}}>Error de conexión</div>
+      <div style={{fontSize:14,opacity:.8,textAlign:'center',maxWidth:380}}>No se pudo conectar con Firebase Firestore. Verifica que las reglas de seguridad permitan lectura/escritura y que tengas conexión a internet.</div>
+      <button className="btn btn-secondary" style={{marginTop:8}} onClick={()=>window.location.reload()}>🔄 Reintentar</button>
+    </div>
+  );
+
+  const tabs=[{id:'inventory',label:'📦 Inventario'},{id:'users',label:'👤 Usuarios'},{id:'labels',label:'🏷️ Etiquetas'},{id:'config',label:'⚙️ Configuración'}];
+
+  return (
+    <div>
+      <header className="app-header">
+        <PUCLogo size={42}/>
+        <div style={{flex:1}}>
+          <h1>Sistema de Inventario — Bodega Laboratorio</h1>
+          <div className="sub">Departamento de Ingeniería y Gestión de la Construcción · Pontificia Universidad Católica de Chile</div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,opacity:.85}}>
+          <span className={`sync-dot ${syncStatus==='ok'?'sync-ok':syncStatus==='error'?'sync-err':'sync-loading'}`}/>
+          {syncStatus==='ok'?'En línea':syncStatus==='error'?'Sin conexión':'Conectando…'}
+        </div>
+      </header>
+      <nav className="nav-tabs no-print">
+        {tabs.map(t=><div key={t.id} className={`nav-tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}>{t.label}</div>)}
+      </nav>
+      <div className="content">
+        {tab==='inventory'&&<InventoryTab users={users} items={items} goLabel={goLabel} syncing={syncStatus==='loading'}/>}
+        {tab==='users'&&<UsersTab users={users} syncing={syncStatus==='loading'}/>}
+        {tab==='labels'&&<LabelsTab items={items} users={users} config={config} activeLabel={activeLabel}/>}
+        {tab==='config'&&<ConfigTab config={config} setConfig={setConfig}/>}
+      </div>
+
+      <div className={`twk no-print ${tweakOn?'on':''}`}>
+        <h4>⚙️ Tweaks</h4>
+        <div className="twkr">
+          <label>Color principal</label>
+          <input type="color" value={tweaks.accentColor} onChange={e=>{
+            const c=e.target.value; setTweaks(t=>({...t,accentColor:c}));
+            document.querySelectorAll('.btn-primary').forEach(el=>el.style.background=c);
+            window.parent.postMessage({type:'__edit_mode_set_keys',edits:{accentColor:c}},'*');
+          }}/>
+        </div>
+        <div className="twkr">
+          <label>Tamaño fuente tabla</label>
+          <select value={tweaks.tableFont} onChange={e=>{
+            const v=e.target.value; setTweaks(t=>({...t,tableFont:v}));
+            document.querySelectorAll('table td').forEach(el=>el.style.fontSize=v+'px');
+            window.parent.postMessage({type:'__edit_mode_set_keys',edits:{tableFont:v}},'*');
+          }}>
+            <option value="12">Pequeño (12px)</option>
+            <option value="13.5">Normal (13.5px)</option>
+            <option value="15">Grande (15px)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="80" fill="#002060"/>
+    <rect x="10" y="10" width="100" height="60" rx="4" fill="#003087"/>
+    <rect x="15" y="18" width="90" height="10" rx="2" fill="#e8f0fe" opacity=".8"/>
+    <rect x="15" y="32" width="55" height="6" rx="1" fill="white" opacity=".6"/>
+    <rect x="15" y="42" width="40" height="6" rx="1" fill="white" opacity=".4"/>
+    <rect x="15" y="52" width="65" height="6" rx="1" fill="white" opacity=".3"/>
+    <circle cx="96" cy="55" r="8" fill="#22c55e" opacity=".8"/>
+  </svg>
+</template>
+</body>
+</html>
